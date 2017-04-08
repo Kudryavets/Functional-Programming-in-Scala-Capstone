@@ -62,3 +62,5 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 
+# Resource folder
+src/main/resources/
