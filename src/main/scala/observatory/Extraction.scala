@@ -74,6 +74,22 @@ object Extraction {
     * @return A sequence containing, for each location, the average temperature over the year.
     */
   def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Double)]): Iterable[(Location, Double)] = {
-    ???
+    records.par
+      .aggregate(Map.empty[Location, (Double, Int)])(seqOperator, combOperator)
+      .map{ case (location, (temp, count)) => (location, temp / count)}
+  }
+
+  def seqOperator(accMap: Map[Location, (Double, Int)],
+                    newValue: (LocalDate, Location, Double)): Map[Location, (Double, Int)] = {
+    val oldValue = accMap.getOrElse(newValue._2, (0D, 0))
+    accMap.updated(newValue._2, (oldValue._1 + newValue._3, oldValue._2 + 1))
+  }
+
+  def combOperator(accMap1: Map[Location, (Double, Int)],
+                   accMap2: Map[Location, (Double, Int)]): Map[Location, (Double, Int)] = {
+    accMap1 ++ accMap2.map { case (location, (temp, count)) =>
+      val oldValue = accMap1.getOrElse(location, (0D, 0))
+      (location, (temp + oldValue._1, count + oldValue._2))
+    }
   }
 }
