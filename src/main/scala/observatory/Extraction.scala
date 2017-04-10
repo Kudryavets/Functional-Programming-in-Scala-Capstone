@@ -26,9 +26,9 @@ object Extraction {
     val stationsSeq = scala.io.Source.fromInputStream(stationsStream).getLines.toSeq
 
     val temperaturesPath = getClass.getResource(temperaturesFile).getPath
-    val temperatureDf = sparkSession.sparkContext.textFile(temperaturesPath)
+    val temperatureRdd = sparkSession.sparkContext.textFile(temperaturesPath)
 
-    val result = locateTemperaturesImpl(sparkSession, year, stationsSeq, temperatureDf).collect()
+    val result = locateTemperaturesImpl(sparkSession, year, stationsSeq, temperatureRdd).collect()
 
     sparkSession.close()
     result
@@ -43,7 +43,8 @@ object Extraction {
     * @return Dataset[(LocalDate, Location, Double)]
     */
   def locateTemperaturesImpl(sparkSession: SparkSession,
-                             year: Int, stationsSeq: Seq[String],
+                             year: Int,
+                             stationsSeq: Seq[String],
                              temperatureRdd: RDD[String]): RDD[(LocalDate, Location, Double)] = {
     val stationsMap = stationsSeq
       .map(_.split(','))
@@ -53,18 +54,20 @@ object Extraction {
 
     val stationsMapBr = sparkSession.sparkContext.broadcast(stationsMap)
 
-    temperatureRdd.flatMap { line =>
-      val splitted = line.split(',')
+    temperatureRdd.mapPartitions{ iterline =>
       val stationsMap = stationsMapBr.value
 
-      stationsMap.get((splitted(0), splitted(1))) match {
-        case Some(location) =>
-          Some((
-            LocalDate.of(year, splitted(2).toInt, splitted(3).toInt),
-            location,
-            (splitted(4).toDouble - 32) * 5 / 9 // convert in degrees Celsius
+      iterline.flatMap { line =>
+        val splitted = line.split(',')
+        stationsMap.get((splitted(0), splitted(1))) match {
+          case Some(location) =>
+            Some((
+              LocalDate.of(year, splitted(2).toInt, splitted(3).toInt),
+              location,
+              (splitted(4).toDouble - 32) * 5 / 9 // convert in degrees Celsius
             ))
-        case _ => None
+          case _ => None
+        }
       }
     }
   }
@@ -74,7 +77,7 @@ object Extraction {
     * @return A sequence containing, for each location, the average temperature over the year.
     */
   def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Double)]): Iterable[(Location, Double)] = {
-    records.par
+    records.toVector.par
       .aggregate(Map.empty[Location, (Double, Int)])(seqOperator, combOperator)
       .map{ case (location, (temp, count)) => (location, temp / count)}
   }
