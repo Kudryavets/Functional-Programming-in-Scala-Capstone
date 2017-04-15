@@ -51,9 +51,28 @@ object Visualization {
     * @param value The value to interpolate
     * @return The color that corresponds to `value`, according to the color scale defined by `points`
     */
-  def interpolateColor(points: Iterable[(Double, Color)], value: Double): Color = {
-    ???
+  def interpolateColor(points: Iterable[(Double, Color)], value: Double): Color = interpolateColorRec(points.toList.sortBy(- _._1), value)
+
+  def interpolateColorRec(points: List[(Double, Color)], value: Double): Color = {
+    val first :: second :: tail = points
+
+    if (value >= first._1) {
+      first._2
+    } else if (first._1 > value && value > second._1) {
+      val ratio = (first._1 - value) / (first._1 - second._1)
+      Color(
+        iterpolate(first._2.red, second._2.red, ratio),
+        iterpolate(first._2.green, second._2.green, ratio),
+        iterpolate(first._2.blue, second._2.blue, ratio)
+      )
+    } else if (tail.nonEmpty) {
+      interpolateColor(points.tail, value)
+    } else {
+      second._2
+    }
   }
+
+  def iterpolate(x0: Int, x1:Int, ratio: Double): Int = math.round((1 - ratio) * x0 + ratio * x1).toInt
 
   /**
     * @param temperatures Known temperatures
