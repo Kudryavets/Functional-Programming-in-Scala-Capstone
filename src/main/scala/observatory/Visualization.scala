@@ -1,29 +1,25 @@
 package observatory
 
-import com.sksamuel.scrimage.Image
+import com.sksamuel.scrimage.{Image, Pixel}
 
-import scala.collection.parallel.immutable.ParVector
 import scala.math._
 
 /**
   * 2nd milestone: basic visualization
   */
 object Visualization {
-  val DEFAULT_POWER_PARAMETER = 2D
+  val DEFAULT_POWER_PARAMETER = 3D
 
   /**
     * @param temperatures Known temperatures: pairs containing a location and the temperature at this location
     * @param location Location where to predict the temperature
     * @return The predicted temperature at `location`
     */
-  def predictTemperature(temperatures: Iterable[(Location, Double)], location: Location): Double = {
-    val tempVec = temperatures.toVector.par
+  def predictTemperature(temperatures: Iterable[(Location, Double)], location: Location): Double =
+    temperatures.find{ case (loc, _) => loc == location }.map{ case (_, temp) => temp}
+      .getOrElse(predictTemperatureImpl(temperatures, location, DEFAULT_POWER_PARAMETER))
 
-    tempVec.find{ case (loc, _) => loc == location }.map{ case (_, temp) => temp}
-      .getOrElse(predictTemperatureImpl(tempVec, location, DEFAULT_POWER_PARAMETER))
-  }
-
-  def predictTemperatureImpl(temperatures: ParVector[(Location, Double)],
+  def predictTemperatureImpl(temperatures: Iterable[(Location, Double)],
                              location: Location,
                              p: Double): Double = {
     val (sumWeightedTemps, sumWeghts) = temperatures
@@ -80,8 +76,25 @@ object Visualization {
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
   def visualize(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)]): Image = {
-    ???
-  }
+    val pixelArray: Array[Pixel] = new Array[Pixel](360*180)
+    val colorsList = colors.toList
+    val temperaturesVec = temperatures.toVector
 
+    (
+      for {
+        x <- 0 to 359
+        y <- 0 to 179
+      } yield (x, y)
+    ).toVector.par
+      .foreach{ case (x, y) =>
+        val loc = Location(90 - y, x - 180)
+        val temp = predictTemperature(temperaturesVec, loc)
+        val color = interpolateColor(colorsList, temp)
+        val pixel = Pixel(color.red, color.green, color.blue, 255)
+        pixelArray(y * 360 + x) = pixel
+      }
+
+    Image(360, 180, pixelArray)
+  }
 }
 

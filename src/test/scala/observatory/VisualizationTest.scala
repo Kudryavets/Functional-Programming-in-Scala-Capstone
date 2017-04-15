@@ -8,8 +8,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.prop.Checkers
 import org.scalatest.{FunSuite, Matchers}
 
-import scala.collection.parallel.immutable.ParVector
-
 @RunWith(classOf[JUnitRunner])
 class VisualizationTest extends FunSuite with Checkers with Matchers {
   import Visualization._
@@ -22,7 +20,7 @@ class VisualizationTest extends FunSuite with Checkers with Matchers {
   }
 
   test("basic predictTemperatureImpl test") {
-    val temperatures: ParVector[(Location, Double)] = ParVector(
+    val temperatures: Vector[(Location, Double)] = Vector(
           (Location(1D, 1D), 1D),
           (Location(1D, -1D), 2D),
           (Location(-1D, -1D), 3D),
@@ -40,7 +38,7 @@ class VisualizationTest extends FunSuite with Checkers with Matchers {
     val loc2 = Location(180, 90)
     val temp2 = 10
 
-    val temperatures: ParVector[(Location, Double)] = ParVector(
+    val temperatures: Vector[(Location, Double)] = Vector(
       (loc1, temp1),
       (loc2, temp2)
     )
