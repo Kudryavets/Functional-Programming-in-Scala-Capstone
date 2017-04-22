@@ -2,8 +2,7 @@ package observatory
 
 import java.time.LocalDate
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SparkSession
+import scala.collection.parallel.immutable.ParVector
 
 /**
   * 1st milestone: data extraction
@@ -17,59 +16,43 @@ object Extraction {
     * @return A sequence containing triplets (date, location, temperature)
     */
   def locateTemperatures(year: Int, stationsFile: String, temperaturesFile: String): Iterable[(LocalDate, Location, Double)] = {
-    val sparkSession = SparkSession.builder()
-      .master("local")
-      .appName("temperature processing")
-      .getOrCreate()
-
     val stationsStream = getClass.getResourceAsStream(stationsFile)
-    val stationsSeq = scala.io.Source.fromInputStream(stationsStream).getLines.toSeq
+    val stationsVec = scala.io.Source.fromInputStream(stationsStream).getLines.toVector.par
 
-    val temperaturesPath = getClass.getResource(temperaturesFile).getPath
-    val temperatureRdd = sparkSession.sparkContext.textFile(temperaturesPath)
+    val temperaturesPath = getClass.getResourceAsStream(temperaturesFile)
+    val temperatureVec = scala.io.Source.fromInputStream(temperaturesPath).getLines.toVector.par
 
-    val result = locateTemperaturesImpl(sparkSession, year, stationsSeq, temperatureRdd).collect()
-
-    sparkSession.close()
-    result
+    locateTemperaturesImpl(year, stationsVec, temperatureVec)
   }
 
   /**
     *
-    * @param sparkSession SparkSession
     * @param year Year number
-    * @param stationsSeq stations resource file content, every row contains ("stn", "wban", "lat", "lon")
-    * @param temperatureRdd rdd[String] every line contains ("stn", "wban", "month", "day", "temperature")
+    * @param stationsVec stations resource file content, every row contains ("stn", "wban", "lat", "lon")
+    * @param temperatureVec parVector[String] every line contains ("stn", "wban", "month", "day", "temperature")
     * @return Dataset[(LocalDate, Location, Double)]
     */
-  def locateTemperaturesImpl(sparkSession: SparkSession,
-                             year: Int,
-                             stationsSeq: Seq[String],
-                             temperatureRdd: RDD[String]): RDD[(LocalDate, Location, Double)] = {
-    val stationsMap = stationsSeq
+  private def locateTemperaturesImpl(year: Int,
+                             stationsVec: ParVector[String],
+                             temperatureVec: ParVector[String]): Vector[(LocalDate, Location, Double)] = {
+    val stationsMap = stationsVec
       .map(_.split(','))
       .filter(splitted => splitted.length == 4) //  ignore data coming from stations that have no GPS coordinates
       .map(splitted => (splitted(0), splitted(1)) -> Location(splitted(2).toDouble, splitted(3).toDouble))
       .toMap
 
-    val stationsMapBr = sparkSession.sparkContext.broadcast(stationsMap)
-
-    temperatureRdd.mapPartitions{ iterline =>
-      val stationsMap = stationsMapBr.value
-
-      iterline.flatMap { line =>
-        val splitted = line.split(',')
-        stationsMap.get((splitted(0), splitted(1))) match {
-          case Some(location) =>
-            Some((
-              LocalDate.of(year, splitted(2).toInt, splitted(3).toInt),
-              location,
-              (splitted(4).toDouble - 32) * 5 / 9 // convert in degrees Celsius
-            ))
-          case _ => None
-        }
+    temperatureVec.flatMap { line =>
+      val splitted = line.split(',')
+      stationsMap.get((splitted(0), splitted(1))) match {
+        case Some(location) =>
+          Some((
+            LocalDate.of(year, splitted(2).toInt, splitted(3).toInt),
+            location,
+            (splitted(4).toDouble - 32) * 5 / 9 // convert in degrees Celsius
+          ))
+        case _ => None
       }
-    }
+    }.toVector
   }
 
   /**
@@ -82,13 +65,13 @@ object Extraction {
       .map{ case (location, (temp, count)) => (location, temp / count)}
   }
 
-  def seqOperator(accMap: Map[Location, (Double, Int)],
+  private def seqOperator(accMap: Map[Location, (Double, Int)],
                     newValue: (LocalDate, Location, Double)): Map[Location, (Double, Int)] = {
     val oldValue = accMap.getOrElse(newValue._2, (0D, 0))
     accMap.updated(newValue._2, (oldValue._1 + newValue._3, oldValue._2 + 1))
   }
 
-  def combOperator(accMap1: Map[Location, (Double, Int)],
+  private def combOperator(accMap1: Map[Location, (Double, Int)],
                    accMap2: Map[Location, (Double, Int)]): Map[Location, (Double, Int)] = {
     accMap1 ++ accMap2.map { case (location, (temp, count)) =>
       val oldValue = accMap1.getOrElse(location, (0D, 0))
