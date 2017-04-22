@@ -8,7 +8,7 @@ import scala.math._
   * 2nd milestone: basic visualization
   */
 object Visualization {
-  val DEFAULT_POWER_PARAMETER = 3D
+  val DEFAULT_POWER_PARAMETER = 2D
 
   /**
     * @param temperatures Known temperatures: pairs containing a location and the temperature at this location
@@ -23,7 +23,7 @@ object Visualization {
                              location: Location,
                              p: Double): Double = {
     val (sumWeightedTemps, sumWeghts) = temperatures
-      .map{ case (loc, temp) => (temp, 1 / pow(distance(loc2Rad(loc), loc2Rad(location)), p))}
+      .map{ case (knownLoc, temp) => (temp, 1 / pow(distance(loc2Rad(knownLoc), loc2Rad(location)), p))}
       .aggregate(0D, 0D) (
         (acc, tempWeigtPair) => (acc._1 + tempWeigtPair._1 * tempWeigtPair._2, acc._2 + tempWeigtPair._2),
         (acc1, acc2) => (acc1._1 + acc2._1, acc1._2 + acc2._2)
@@ -49,7 +49,7 @@ object Visualization {
     */
   def interpolateColor(points: Iterable[(Double, Color)], value: Double): Color = interpolateColorRec(points.toList.sortBy(- _._1), value)
 
-  def interpolateColorRec(points: List[(Double, Color)], value: Double): Color = {
+  private def interpolateColorRec(points: List[(Double, Color)], value: Double): Color = {
     val first :: second :: tail = points
 
     if (value >= first._1) {
@@ -68,7 +68,7 @@ object Visualization {
     }
   }
 
-  def iterpolate(x0: Int, x1:Int, ratio: Double): Int = math.round((1 - ratio) * x0 + ratio * x1).toInt
+  private def iterpolate(x0: Int, x1:Int, ratio: Double): Int = math.round((1 - ratio) * x0 + ratio * x1).toInt
 
   /**
     * @param temperatures Known temperatures
@@ -90,11 +90,34 @@ object Visualization {
         val loc = Location(90 - y, x - 180)
         val temp = predictTemperature(temperaturesVec, loc)
         val color = interpolateColor(colorsList, temp)
-        val pixel = Pixel(color.red, color.green, color.blue, 255)
+        val pixel = Pixel(color.red, color.green, color.blue, 127)
         pixelArray(y * 360 + x) = pixel
       }
 
     Image(360, 180, pixelArray)
+  }
+}
+
+object VisualizationChecker {
+  def main(args: Array[String]): Unit = {
+    val year1975Temperatures = Extraction.locationYearlyAverageRecords(
+      Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
+    )
+
+    val colors = Seq(
+      (60D,	Color(255,	255,	255)),
+      (32D,	Color(255,	0,	0)),
+      (12D,	Color(255,	255,	0)),
+      (0D,	Color(0,	255,	255)),
+      (-15D,	Color(0,	0,	255)),
+      (-27D,	Color(255,	0,	255)),
+      (-50D,	Color(33,	0,	107)),
+      (-60D,	Color(0,	0,	0))
+    )
+
+    val image = Visualization.visualize(year1975Temperatures, colors)
+
+    image.output(new java.io.File("target/test_image.png"))
   }
 }
 
