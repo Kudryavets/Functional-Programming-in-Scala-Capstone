@@ -80,13 +80,8 @@ object Visualization {
     val colorsList = colors.toList
     val temperaturesVec = temperatures.toVector
 
-    (
-      for {
-        x <- 0 to 359
-        y <- 0 to 179
-      } yield (x, y)
-    ).toVector.par
-      .foreach{ case (x, y) =>
+    ( for { x <- 0 to 359; y <- 0 to 179 } yield (x, y) ).toVector.par
+      .foreach { case (x, y) =>
         val loc = Location(90 - y, x - 180)
         val temp = predictTemperature(temperaturesVec, loc)
         val color = interpolateColor(colorsList, temp)
@@ -97,27 +92,3 @@ object Visualization {
     Image(360, 180, pixelArray)
   }
 }
-
-object VisualizationChecker {
-  def main(args: Array[String]): Unit = {
-    val year1975Temperatures = Extraction.locationYearlyAverageRecords(
-      Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
-    )
-
-    val colors = Seq(
-      (60D,	Color(255,	255,	255)),
-      (32D,	Color(255,	0,	0)),
-      (12D,	Color(255,	255,	0)),
-      (0D,	Color(0,	255,	255)),
-      (-15D,	Color(0,	0,	255)),
-      (-27D,	Color(255,	0,	255)),
-      (-50D,	Color(33,	0,	107)),
-      (-60D,	Color(0,	0,	0))
-    )
-
-    val image = Visualization.visualize(year1975Temperatures, colors)
-
-    image.output(new java.io.File("target/test_image.png"))
-  }
-}
-

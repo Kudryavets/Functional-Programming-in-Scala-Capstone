@@ -32,7 +32,7 @@ object Extraction {
     * @param temperatureVec parVector[String] every line contains ("stn", "wban", "month", "day", "temperature")
     * @return Dataset[(LocalDate, Location, Double)]
     */
-  private def locateTemperaturesImpl(year: Int,
+  def locateTemperaturesImpl(year: Int,
                              stationsVec: ParVector[String],
                              temperatureVec: ParVector[String]): Vector[(LocalDate, Location, Double)] = {
     val stationsMap = stationsVec
