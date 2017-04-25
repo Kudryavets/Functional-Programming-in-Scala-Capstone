@@ -12,3 +12,5 @@ The inverse distance weighting algorithm (https://en.wikipedia.org/wiki/Inverse_
 The great-circle distance formula (https://en.wikipedia.org/wiki/Great-circle_distance) is used to approximate the distance between two stations.
 
 Colors are smoothed by applying the linear interpolation algorithm (https://en.wikipedia.org/wiki/Linear_interpolation).
+
+The map is broken down into tiles using the Web Mercator projection (http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
