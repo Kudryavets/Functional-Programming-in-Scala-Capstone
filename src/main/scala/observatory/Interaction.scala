@@ -1,6 +1,7 @@
 package observatory
 
-import com.sksamuel.scrimage.Image
+import com.sksamuel.scrimage.{Image, Pixel}
+import observatory.Visualization.{interpolateColor, predictTemperature}
 
 import scala.math._
 
@@ -30,7 +31,20 @@ object Interaction {
     * @return A 256×256 image showing the contents of the tile defined by `x`, `y` and `zooms`
     */
   def tile(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)], zoom: Int, x: Int, y: Int): Image = {
-    ???
+    val imageSize = 256
+    val pixelArray: Array[Pixel] = new Array[Pixel](imageSize*imageSize)
+    val colorsList = colors.toList
+    val temperaturesVec = temperatures.toVector
+
+    ( for { x <- 0 until imageSize; y <- 0 until imageSize } yield (x, y) ).toVector.par
+      .foreach { case (xCoord, yCoord) =>
+        val temp = predictTemperature(temperaturesVec, tileLocation(zoom + 8, x * imageSize + xCoord, y * imageSize + yCoord)) // +7
+        val color = interpolateColor(colorsList, temp)
+        val pixel = Pixel(color.red, color.green, color.blue, 127)
+        pixelArray(yCoord * imageSize + xCoord) = pixel
+      }
+
+    Image(imageSize, imageSize, pixelArray)
   }
 
   /**
@@ -44,7 +58,14 @@ object Interaction {
     yearlyData: Iterable[(Int, Data)],
     generateImage: (Int, Int, Int, Int, Data) => Unit
   ): Unit = {
-    ???
+    for {
+      zoom <- 0 to 3
+      x <- 0 until pow(2, zoom).toInt
+      y <- 0 until pow(2, zoom).toInt
+    } yield {
+      yearlyData.foreach { case (year, data) =>
+        generateImage(year, zoom, x, y, data)
+      }
+    }
   }
-
 }
