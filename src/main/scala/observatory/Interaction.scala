@@ -36,9 +36,9 @@ object Interaction {
     val colorsList = colors.toList
     val temperaturesVec = temperatures.toVector
 
-    ( for { x <- 0 until imageSize; y <- 0 until imageSize } yield (x, y) ).toVector.par
+    ( for { xCoord <- 0 until imageSize; yCoord <- 0 until imageSize } yield (xCoord, yCoord) ).toVector.par
       .foreach { case (xCoord, yCoord) =>
-        val temp = predictTemperature(temperaturesVec, tileLocation(zoom + 8, x * imageSize + xCoord, y * imageSize + yCoord)) // +7
+        val temp = predictTemperature(temperaturesVec, tileLocation(zoom + 8, x * imageSize + xCoord, y * imageSize + yCoord))
         val color = interpolateColor(colorsList, temp)
         val pixel = Pixel(color.red, color.green, color.blue, 127)
         pixelArray(yCoord * imageSize + xCoord) = pixel
@@ -63,9 +63,7 @@ object Interaction {
         zoom <- 0 to 3
         x <- 0 until pow(2, zoom).toInt
         y <- 0 until pow(2, zoom).toInt
-      } yield {
-        generateImage(year, zoom, x, y, data)
-      }
+      } generateImage(year, zoom, x, y, data)
     }
   }
 }
