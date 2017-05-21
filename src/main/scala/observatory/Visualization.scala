@@ -32,12 +32,19 @@ object Visualization {
     sumWeightedTemps / sumWeghts
   }
 
-  def distance(location1: Location, location2: Location): Double =
-    acos(
-      sin(location1.lat) * sin(location2.lat) + cos(location1.lat) * cos(location2.lat) * cos(
-        abs(location1.lon - location2.lon)
-      )
+  def distance(loc1: Location, loc2: Location): Double = {
+    val delta = abs(loc1.lon - loc2.lon)
+    val cosDelta = cos(delta)
+    val cosLat1 = cos(loc1.lat)
+    val cosLat2 = cos(loc2.lat)
+    val sinLat1 = sin(loc1.lat)
+    val sinLat2 = sin(loc2.lat)
+
+    atan2(
+      sqrt(pow(cosLat2*sin(delta), 2) + pow(cosLat1*sinLat2 - sinLat1*cosLat2*cosDelta, 2)),
+      sinLat1*sinLat2 + cosLat1*cosLat2*cosDelta
     )
+  }
 
   def loc2Rad(loc: Location): Location = Location(toRadians(loc.lat), toRadians(loc.lon))
 
