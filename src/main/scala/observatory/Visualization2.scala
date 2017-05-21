@@ -1,6 +1,10 @@
 package observatory
 
 import com.sksamuel.scrimage.{Image, Pixel}
+import observatory.Interaction.tileLocation
+import observatory.Visualization.interpolateColor
+
+import scala.math._
 
 /**
   * 5th milestone: value-added information visualization
@@ -25,7 +29,9 @@ object Visualization2 {
     d10: Double,
     d11: Double
   ): Double = {
-    ???
+    val xCeilInterpolated = (1-x) * d00 + x * d10
+    val xFloorInterpolated = (1-x) * d01 + x * d11
+    (1-y) * xCeilInterpolated + y * xFloorInterpolated
   }
 
   /**
@@ -43,7 +49,31 @@ object Visualization2 {
     x: Int,
     y: Int
   ): Image = {
-    ???
+    val imageSize = 256
+    val pixelArray: Array[Pixel] = new Array[Pixel](imageSize*imageSize)
+    val colorsList = colors.toList
+
+    ( for { xCoord <- 0 until imageSize; yCoord <- 0 until imageSize } yield (xCoord, yCoord) ).toVector.par
+      .foreach { case (xCoord, yCoord) =>
+        val location = tileLocation(zoom + 8, x * imageSize + xCoord, y * imageSize + yCoord)
+        val xFloor = floor(location.lon).toInt
+        val xCeil = ceil(location.lon).toInt
+        val yFloor = floor(location.lat).toInt
+        val yCeil = ceil(location.lat).toInt
+        val temp = bilinearInterpolation(
+          location.lon - xFloor,
+          yCeil - location.lat,
+          grid(yCeil, xFloor),
+          grid(yFloor, xFloor),
+          grid(yCeil, xCeil),
+          grid(yFloor, xCeil)
+        )
+        val color = interpolateColor(colorsList, temp)
+        val pixel = Pixel(color.red, color.green, color.blue, 127)
+        pixelArray(yCoord * imageSize + xCoord) = pixel
+      }
+
+    Image(imageSize, imageSize, pixelArray)
   }
 
 }

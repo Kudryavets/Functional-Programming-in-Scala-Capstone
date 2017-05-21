@@ -16,3 +16,5 @@ Colors are smoothed by applying the linear interpolation algorithm (https://en.w
 The map is broken down into tiles using the Web Mercator projection (http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
 
 In order to make computation of tiles faster, scattered data spatially interpolated into a regular grid.
+
+For generating tiles with temperatures' deviations the bilinear interpolation (https://en.wikipedia.org/wiki/Bilinear_interpolation) is used.
