@@ -14,3 +14,5 @@ The great-circle distance formula (https://en.wikipedia.org/wiki/Great-circle_di
 Colors are smoothed by applying the linear interpolation algorithm (https://en.wikipedia.org/wiki/Linear_interpolation).
 
 The map is broken down into tiles using the Web Mercator projection (http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
+
+In order to make computation of tiles faster, scattered data spatially interpolated into a regular grid.
