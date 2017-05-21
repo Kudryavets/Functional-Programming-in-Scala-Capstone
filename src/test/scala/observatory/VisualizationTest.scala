@@ -2,8 +2,6 @@ package observatory
 
 
 import org.junit.runner.RunWith
-import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.prop.Checkers
 import org.scalatest.{FunSuite, Matchers}
@@ -30,29 +28,6 @@ class VisualizationTest extends FunSuite with Checkers with Matchers {
     val predicted: Double = predictTemperatureImpl(temperatures, Location(0D, 0D), DEFAULT_POWER_PARAMETER)
 
     assert(predicted === 2.194 +- 0.001)
-  }
-
-  test("predictTemperatureImpl neighbourhood") {
-    val loc1 = Location(0, 90)
-    val temp1 = 50
-    val loc2 = Location(180, 90)
-    val temp2 = 10
-
-    val temperatures: Vector[(Location, Double)] = Vector(
-      (loc1, temp1),
-      (loc2, temp2)
-    )
-
-    val genLoc = Gen.resultOf(Location)
-
-    forAll(genLoc) { loc: Location =>
-      val predicted: Double = predictTemperatureImpl(temperatures, loc, DEFAULT_POWER_PARAMETER)
-      if (distance(loc2Rad(loc), loc2Rad(loc1)) > distance(loc2Rad(loc), loc2Rad(loc2))) {
-        temp1 - predicted > temp2 - predicted
-      } else {
-        temp1 - predicted <= temp2 - predicted
-      }
-    }
   }
 
   test("interpolation tests") {
