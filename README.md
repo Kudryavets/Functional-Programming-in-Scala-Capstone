@@ -1,4 +1,6 @@
-# Functional-Programming-in-Scala-Capstone
+# Interactive heat map app in Scala
+
+Functional Programming in Scala Capstone
 
 This application shows interactive visualization of climate data. The app allows to trace the evolution of temperatures over time and temperature deviations over time in all over the world.
 
