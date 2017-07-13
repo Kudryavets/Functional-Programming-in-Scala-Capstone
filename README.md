@@ -2,7 +2,7 @@
 
 Functional Programming in Scala Capstone
 
-This application shows interactive visualization of climate data. The app allows to trace the evolution of temperatures over time and temperature deviations over time in all over the world.
+This application shows interactive visualization of climate data. The app allows to trace the evolution of temperatures and temperature deviations over time in all over the world.
 
 
 The data you will see comes from the National Center for Environmental Information of the United States. It covers years from 1975 to 2015 and contains observation from 29444 weather stations from all over the world.
