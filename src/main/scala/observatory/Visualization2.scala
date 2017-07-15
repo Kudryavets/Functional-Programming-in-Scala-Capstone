@@ -49,13 +49,13 @@ object Visualization2 {
     x: Int,
     y: Int
   ): Image = {
-    val imageSize = 256
+    val imageSize = 128
     val pixelArray: Array[Pixel] = new Array[Pixel](imageSize*imageSize)
     val colorsList = colors.toList
 
     ( for { xCoord <- 0 until imageSize; yCoord <- 0 until imageSize } yield (xCoord, yCoord) ).toVector.par
       .foreach { case (xCoord, yCoord) =>
-        val location = tileLocation(zoom + 8, x * imageSize + xCoord, y * imageSize + yCoord)
+        val location = tileLocation(zoom + 8, x * imageSize + xCoord*2, y * imageSize + yCoord*2)
         val xFloor = floor(location.lon).toInt
         val xCeil = ceil(location.lon).toInt
         val yFloor = floor(location.lat).toInt
@@ -73,7 +73,7 @@ object Visualization2 {
         pixelArray(yCoord * imageSize + xCoord) = pixel
       }
 
-    Image(imageSize, imageSize, pixelArray)
+    Image(imageSize, imageSize, pixelArray).fit(2*imageSize,2*imageSize)
   }
 
 }

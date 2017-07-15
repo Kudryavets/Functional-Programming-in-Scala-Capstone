@@ -31,20 +31,20 @@ object Interaction {
     * @return A 256×256 image showing the contents of the tile defined by `x`, `y` and `zooms`
     */
   def tile(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)], zoom: Int, x: Int, y: Int): Image = {
-    val imageSize = 256
+    val imageSize = 128
     val pixelArray: Array[Pixel] = new Array[Pixel](imageSize*imageSize)
     val colorsList = colors.toList
     val temperaturesVec = temperatures.toVector
 
     ( for { xCoord <- 0 until imageSize; yCoord <- 0 until imageSize } yield (xCoord, yCoord) ).toVector.par
       .foreach { case (xCoord, yCoord) =>
-        val temp = predictTemperature(temperaturesVec, tileLocation(zoom + 8, x * imageSize + xCoord, y * imageSize + yCoord))
+        val temp = predictTemperature(temperaturesVec, tileLocation(zoom + 8, x * imageSize + xCoord*2, y * imageSize + yCoord*2))
         val color = interpolateColor(colorsList, temp)
         val pixel = Pixel(color.red, color.green, color.blue, 127)
         pixelArray(yCoord * imageSize + xCoord) = pixel
       }
 
-    Image(imageSize, imageSize, pixelArray)
+    Image(imageSize, imageSize, pixelArray).fit(2*imageSize,2*imageSize)
   }
 
   /**

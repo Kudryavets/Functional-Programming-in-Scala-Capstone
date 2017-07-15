@@ -3,7 +3,6 @@ package observatory
 import java.io.File
 
 import com.sksamuel.scrimage.Image
-import com.sksamuel.scrimage.nio.JpegWriter
 
 /**
   * Launch with setsid nohup sbt "runMain observatory.ImagePreparator" 2>&1 > outputLog.txt &
@@ -61,14 +60,16 @@ object ImagePreparator {
                                     colors: Seq[(Double, Color)],
                                     tileFunc: (Data, Seq[(Double, Color)], Int, Int, Int) => Image
                                   ): (Int, Int, Int, Int, Data) => Unit = {
-  
-    implicit val writer = JpegWriter().withCompression(50).withProgressive(true)
-    
+        
     (year: Int, zoom: Int, x: Int, y: Int, data: Data) => {
       val folderPath = s"target/$folderName/$year/$zoom"
-      val img = tileFunc(data, colors, zoom, x, y)
-      createIfNotExist(folderPath)
-      img.output(new java.io.File(s"$folderPath/$x-$y.png"))
+      val filePath = s"$folderPath/$x-$y.png"
+      
+      if (!new File(filePath).exists()) {
+        createIfNotExist(folderPath)
+        val img = tileFunc(data, colors, zoom, x, y)
+        img.output(new java.io.File(filePath))
+      }
     }
     
   }
